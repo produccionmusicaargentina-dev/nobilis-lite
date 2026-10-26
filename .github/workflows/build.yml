@@ -59,7 +59,7 @@ jobs:
         run: |
           cmake -B build-tests -DCMAKE_BUILD_TYPE=Release -DLITE_BUILD_TESTS=ON -DLITE_REQUIRE_LOGIN=OFF
           for P in $PLUGINS; do
-            cmake --build build-tests --config Release --parallel --target ${P}_Tests
+            cmake --build build-tests --config Release --parallel 4 --target ${P}_Tests
             exe=$(find build-tests/${P}_Tests_artefacts -type f \( -name "${P}_Tests" -o -name "${P}_Tests.exe" \) | head -1)
             "$exe"
           done
@@ -75,7 +75,7 @@ jobs:
             targets="$targets ${P}_VST3 ${P}_Standalone"
             [ "$RUNNER_OS" = "macOS" ] && targets="$targets ${P}_AU"
           done
-          cmake --build build --config Release --parallel --target $targets
+          cmake --build build --config Release --parallel 4 --target $targets
 
       # ---------------------------------------------------------------- macOS
       - name: Ad-hoc sign (macOS)
