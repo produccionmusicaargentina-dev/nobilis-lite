@@ -1,0 +1,10 @@
+NOBILIS LITE · Instalación en Windows
+=====================================
+
+1. Abrí NOBILIS-Lite-Setup-Windows.exe.
+   Si Windows muestra "Windows protegió su PC": "Más información" → "Ejecutar de todas formas".
+2. Elegí qué plugins instalar (por defecto, los cuatro). Los VST3 van a C:\Program Files\Common Files\VST3.
+3. Abrí tu DAW (en Ableton: Opciones → Preferencias → Plug-ins → Volver a escanear) y buscá
+   PULSUS, ADEPS, LATUS y VETUS (fabricante: Nobilis).
+   La primera vez pide iniciar sesión: se abre el navegador, entrás con tu cuenta gratis de Nobilis
+   y tocás "Activar". Con una sola vez se activan los cuatro.

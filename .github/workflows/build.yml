@@ -1,0 +1,157 @@
+name: Build NOBILIS LITE
+
+# - Cada push: compila los cuatro plugins (Windows + macOS), corre los tests offline y deja
+#   los instaladores en "Artifacts" del run.
+# - Al subir un tag vX.Y.Z: compila esa versión (login obligatorio, sin log de diagnóstico) y,
+#   si está el secreto RELEASES_TOKEN, publica en el repo de descargas (variable DOWNLOADS_REPO)
+#   la release "lite-vX.Y.Z" (no se marca como "latest", así no pisa IGNIS ni ACIES).
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión de release (ej. 1.0.0). Vacío = build de prueba'
+        required: false
+        default: ''
+      login:
+        description: 'Login con cuenta Nobilis. "sin-login" = instaladores de prueba que funcionan sin la web (no publicar)'
+        type: choice
+        options: ['con-login', 'sin-login']
+        default: 'con-login'
+
+env:
+  PLUGINS: PULSUS ADEPS LATUS VETUS
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Windows
+          - os: macos-15-intel
+            name: macOS
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        shell: bash
+        run: |
+          if [[ -n "${{ inputs.version }}" ]]; then
+            echo "VERSION=${{ inputs.version }}" >> "$GITHUB_ENV"; echo "DIAG=OFF" >> "$GITHUB_ENV"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"; echo "DIAG=OFF" >> "$GITHUB_ENV"
+          else
+            echo "VERSION=1.0.0" >> "$GITHUB_ENV"; echo "DIAG=ON" >> "$GITHUB_ENV"
+          fi
+          if [[ "${{ inputs.login }}" == "sin-login" ]]; then echo "LOGIN=OFF" >> "$GITHUB_ENV"; else echo "LOGIN=ON" >> "$GITHUB_ENV"; fi
+
+      # Tests offline (sin login): procesamiento, bypass, layouts, estado y CPU de cada plugin
+      - name: Tests
+        shell: bash
+        run: |
+          cmake -B build-tests -DCMAKE_BUILD_TYPE=Release -DLITE_BUILD_TESTS=ON -DLITE_REQUIRE_LOGIN=OFF
+          for P in $PLUGINS; do
+            cmake --build build-tests --config Release --parallel --target ${P}_Tests
+            exe=$(find build-tests/${P}_Tests_artefacts -type f \( -name "${P}_Tests" -o -name "${P}_Tests.exe" \) | head -1)
+            "$exe"
+          done
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DLITE_VERSION=${{ env.VERSION }} -DLITE_DIAGNOSTICS=${{ env.DIAG }} -DLITE_REQUIRE_LOGIN=${{ env.LOGIN }}
+
+      - name: Build
+        shell: bash
+        run: |
+          targets=""
+          for P in $PLUGINS; do
+            targets="$targets ${P}_VST3 ${P}_Standalone"
+            [ "$RUNNER_OS" = "macOS" ] && targets="$targets ${P}_AU"
+          done
+          cmake --build build --config Release --parallel --target $targets
+
+      # ---------------------------------------------------------------- macOS
+      - name: Ad-hoc sign (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          for P in $PLUGINS; do
+            for b in VST3/$P.vst3 AU/$P.component Standalone/$P.app; do
+              codesign --force --deep --sign - "build/${P}_artefacts/Release/$b"
+            done
+          done
+
+      - name: Validate AU (macOS)
+        if: runner.os == 'macOS'
+        continue-on-error: true
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          for P in $PLUGINS; do cp -R "build/${P}_artefacts/Release/AU/$P.component" ~/Library/Audio/Plug-Ins/Components/; done
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 3
+          for code in Pls1 Adp1 Lat1 Vet1; do auval -v aufx $code Nobl; done
+
+      - name: Installer .pkg (macOS)
+        if: runner.os == 'macOS'
+        run: bash packaging/macos/build-pkg.sh "$VERSION" build dist/NOBILIS-Lite-macOS.pkg
+
+      # -------------------------------------------------------------- Windows
+      - name: Installer .exe (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc /DAppVersion=$env:VERSION packaging\windows\NOBILIS-Lite.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOBILIS-Lite-${{ matrix.name }}-${{ inputs.login || 'con-login' }}
+          path: |
+            dist/*.exe
+            dist/*.pkg
+
+      # Carga cada plugin como un DAW (sin sesión iniciada: el audio pasa limpio)
+      - name: Validate with pluginval
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_Windows.zip
+            unzip -q pluginval.zip; PV=./pluginval.exe
+          else
+            curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+            unzip -q pluginval.zip; PV=./pluginval.app/Contents/MacOS/pluginval
+          fi
+          for P in $PLUGINS; do
+            $PV --strictness-level 10 --validate-in-process --validate "build/${P}_artefacts/Release/VST3/$P.vst3"
+          done
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && inputs.login != 'sin-login'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publicar en el repo de descargas
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          REPO: ${{ vars.DOWNLOADS_REPO || format('{0}/nobilis-descargas', github.repository_owner) }}
+        run: |
+          ls -la out
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::Falta el secreto RELEASES_TOKEN: bajá los instaladores de Artifacts y subilos a mano."
+            exit 0
+          fi
+          gh release create "lite-$GITHUB_REF_NAME" out/NOBILIS-Lite-Setup-Windows.exe out/NOBILIS-Lite-macOS.pkg \
+            --repo "$REPO" --title "NOBILIS LITE $GITHUB_REF_NAME" --notes "NOBILIS LITE $GITHUB_REF_NAME" --latest=false

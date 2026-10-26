@@ -1,0 +1,8 @@
+NOBILIS LITE · Instalación en macOS
+===================================
+
+1. Abrí NOBILIS-Lite-macOS.pkg.
+   Si aparece "desarrollador no identificado": clic derecho sobre el instalador → Abrir → Abrir.
+2. Seguí los pasos. En "Personalizar" podés elegir qué plugins instalar (por defecto, los cuatro, en VST3 y AU).
+3. Abrí tu DAW y buscá PULSUS, ADEPS, LATUS y VETUS (fabricante: Nobilis).
+   La primera vez pide iniciar sesión con tu cuenta gratis de Nobilis. Con una sola vez se activan los cuatro.

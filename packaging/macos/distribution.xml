@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>NOBILIS LITE __VERSION__</title>
+    <organization>audio.nobilis</organization>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <options customize="allow" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+    <domains enable_localSystem="true"/>
+    <choices-outline>
+        <line choice="pulsus"/>
+        <line choice="adeps"/>
+        <line choice="latus"/>
+        <line choice="vetus"/>
+        <line choice="apps"/>
+    </choices-outline>
+    <choice id="pulsus" title="PULSUS" description="PULSUS: pump sincronizado al tempo. VST3 (Ableton, FL Studio, Reaper, Cubase…) y Audio Unit (Logic, GarageBand).">
+        <pkg-ref id="audio.nobilis.pulsus.vst3"/>
+        <pkg-ref id="audio.nobilis.pulsus.au"/>
+    </choice>
+    <choice id="adeps" title="ADEPS" description="ADEPS: gordura instantánea. VST3 (Ableton, FL Studio, Reaper, Cubase…) y Audio Unit (Logic, GarageBand).">
+        <pkg-ref id="audio.nobilis.adeps.vst3"/>
+        <pkg-ref id="audio.nobilis.adeps.au"/>
+    </choice>
+    <choice id="latus" title="LATUS" description="LATUS: chorus de sinte. VST3 (Ableton, FL Studio, Reaper, Cubase…) y Audio Unit (Logic, GarageBand).">
+        <pkg-ref id="audio.nobilis.latus.vst3"/>
+        <pkg-ref id="audio.nobilis.latus.au"/>
+    </choice>
+    <choice id="vetus" title="VETUS" description="VETUS: máquina lo-fi. VST3 (Ableton, FL Studio, Reaper, Cubase…) y Audio Unit (Logic, GarageBand).">
+        <pkg-ref id="audio.nobilis.vetus.vst3"/>
+        <pkg-ref id="audio.nobilis.vetus.au"/>
+    </choice>
+    <choice id="apps" title="Apps Standalone" description="Para usar los plugins sin DAW (en Aplicaciones › Nobilis)." start_selected="false">
+        <pkg-ref id="audio.nobilis.pulsus.app"/>
+        <pkg-ref id="audio.nobilis.adeps.app"/>
+        <pkg-ref id="audio.nobilis.latus.app"/>
+        <pkg-ref id="audio.nobilis.vetus.app"/>
+    </choice>
+    <pkg-ref id="audio.nobilis.pulsus.vst3" version="__VERSION__">pulsus-vst3.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.pulsus.au" version="__VERSION__">pulsus-au.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.pulsus.app" version="__VERSION__">pulsus-app.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.adeps.vst3" version="__VERSION__">adeps-vst3.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.adeps.au" version="__VERSION__">adeps-au.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.adeps.app" version="__VERSION__">adeps-app.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.latus.vst3" version="__VERSION__">latus-vst3.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.latus.au" version="__VERSION__">latus-au.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.latus.app" version="__VERSION__">latus-app.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.vetus.vst3" version="__VERSION__">vetus-vst3.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.vetus.au" version="__VERSION__">vetus-au.pkg</pkg-ref>
+    <pkg-ref id="audio.nobilis.vetus.app" version="__VERSION__">vetus-app.pkg</pkg-ref>
+</installer-gui-script>

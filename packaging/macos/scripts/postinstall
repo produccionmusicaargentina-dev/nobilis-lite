@@ -1,0 +1,4 @@
+#!/bin/bash
+# Fuerza a macOS a volver a leer los Audio Units (así Logic ve los plugins sin reiniciar)
+killall -9 AudioComponentRegistrar 2>/dev/null || true
+exit 0
