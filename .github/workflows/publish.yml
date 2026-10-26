@@ -1,0 +1,48 @@
+name: Publicar release
+
+# Publica como release de este repo (público) los instaladores de una build que ya terminó,
+# sin volver a compilar. Usar con una corrida de "Build NOBILIS LITE" hecha con login
+# (con-login) y versión cargada.
+#   Actions → Publicar release → Run workflow → run_id + versión
+# Links resultantes (los que usa la web):
+#   https://github.com/<repo>/releases/download/vX.Y.Z/NOBILIS-Lite-Setup-Windows.exe
+#   https://github.com/<repo>/releases/download/vX.Y.Z/NOBILIS-Lite-macOS.pkg
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID de la corrida de "Build NOBILIS LITE" (con-login) que se publica'
+        required: true
+      version:
+        description: 'Versión (ej. 1.0.0)'
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instaladores de la corrida ${{ inputs.run_id }}
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          pattern: NOBILIS-Lite-*-con-login
+          path: out
+          merge-multiple: true
+
+      - name: Crear la release v${{ inputs.version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la out
+          test -f out/NOBILIS-Lite-Setup-Windows.exe
+          test -f out/NOBILIS-Lite-macOS.pkg
+          gh release create "v${{ inputs.version }}" out/NOBILIS-Lite-Setup-Windows.exe out/NOBILIS-Lite-macOS.pkg \
+            --repo "$GITHUB_REPOSITORY" --target "${{ github.sha }}" \
+            --title "NOBILIS LITE ${{ inputs.version }}" \
+            --notes "PULSUS, ADEPS, LATUS y VETUS. Gratis con tu cuenta de Nobilis: https://nobilis.ar/lite"

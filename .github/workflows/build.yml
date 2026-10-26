@@ -2,13 +2,14 @@ name: Build NOBILIS LITE
 
 # - Cada push: compila los cuatro plugins (Windows + macOS), corre los tests offline y deja
 #   los instaladores en "Artifacts" del run.
-# - Al subir un tag vX.Y.Z: compila esa versión (login obligatorio, sin log de diagnóstico) y,
-#   si está el secreto RELEASES_TOKEN, publica en el repo de descargas (variable DOWNLOADS_REPO)
-#   la release "lite-vX.Y.Z" (no se marca como "latest", así no pisa IGNIS ni ACIES).
+# - Al subir un tag vX.Y.Z: compila esa versión (login obligatorio, sin log de diagnóstico)
+#   y la publica como release vX.Y.Z de este repo (público). No hace falta ningún token.
+# - Para publicar una build ya hecha sin recompilar: workflow "Publicar release".
 
 on:
   push:
     branches: ['**']
+    paths-ignore: ['**.md', 'docs/**', '.github/workflows/publish.yml']
     tags: ['v*']
   workflow_dispatch:
     inputs:
@@ -138,20 +139,18 @@ jobs:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v') && inputs.login != 'sin-login'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: out
           merge-multiple: true
-      - name: Publicar en el repo de descargas
+      - name: Release de este repo (público)
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-          REPO: ${{ vars.DOWNLOADS_REPO || format('{0}/nobilis-descargas', github.repository_owner) }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           ls -la out
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::warning::Falta el secreto RELEASES_TOKEN: bajá los instaladores de Artifacts y subilos a mano."
-            exit 0
-          fi
-          gh release create "lite-$GITHUB_REF_NAME" out/NOBILIS-Lite-Setup-Windows.exe out/NOBILIS-Lite-macOS.pkg \
-            --repo "$REPO" --title "NOBILIS LITE $GITHUB_REF_NAME" --notes "NOBILIS LITE $GITHUB_REF_NAME" --latest=false
+          gh release create "$GITHUB_REF_NAME" out/NOBILIS-Lite-Setup-Windows.exe out/NOBILIS-Lite-macOS.pkg \
+            --repo "$GITHUB_REPOSITORY" --title "NOBILIS LITE $GITHUB_REF_NAME" \
+            --notes "PULSUS, ADEPS, LATUS y VETUS. Gratis con tu cuenta de Nobilis: https://nobilis.ar/lite"

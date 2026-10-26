@@ -103,6 +103,9 @@ GitHub Actions (`.github/workflows/build.yml`) compila los cuatro en Windows y m
 - `NOBILIS-Lite-Setup-Windows.exe` (Inno Setup; se puede elegir qué plugins instalar).
 - `NOBILIS-Lite-macOS.pkg` (VST3 + AU, apps Standalone opcionales).
 
-Con un tag `vX.Y.Z` y el secreto `RELEASES_TOKEN`, publica la release `lite-vX.Y.Z` en el repo de descargas.
+Publicación (el repo es público, así que las releases sirven de descarga y no hace falta ningún token):
 
-En la web, cargá en Netlify `LITE_VERSION` (o `LITE_URL_WIN` / `LITE_URL_MAC` con los links directos): con eso aparecen las descargas en Mi cuenta y en el email de bienvenida, y el plugin avisa cuando hay versión nueva.
+- **Sin recompilar**: Actions → **Publicar release** → el ID de una corrida de *Build NOBILIS LITE* hecha con login y la versión. Crea la release `vX.Y.Z` con los dos instaladores.
+- **Con un tag** `vX.Y.Z`: compila esa versión y la publica igual.
+
+Los links quedan en `https://github.com/produccionmusicaargentina-dev/nobilis-lite/releases/download/vX.Y.Z/…`, que es lo que usa la web. Para una versión nueva, cambiá `LITE_VERSION` en Netlify (o el valor por defecto en el código de la web).
