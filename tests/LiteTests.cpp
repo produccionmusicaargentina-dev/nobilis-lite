@@ -1,3 +1,4 @@
+#include <functional>
 // Offline tests for one Lite plugin (the build makes one executable per plugin).
 //
 //   PULSUS_Tests checks                 engine + plugin checks, CPU
@@ -417,6 +418,16 @@ int main (int argc, char** argv)
         else
         {
             const float scale = args.size() > 4 ? (float) args[4].getDoubleValue() : 1.0f;
+            // marketing pictures: no "dev mode / ADMIN" account chip
+            std::function<void (Component&)> hideAccount = [&] (Component& c)
+            {
+                for (auto* ch : c.getChildren())
+                {
+                    if (ch->getName() == "account") ch->setVisible (false);
+                    else hideAccount (*ch);
+                }
+            };
+            hideAccount (*ed);
             auto img = ed->snapshot (scale);
             out.deleteFile();
             FileOutputStream os (out);
